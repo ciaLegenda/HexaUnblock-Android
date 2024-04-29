@@ -2,72 +2,109 @@ package com.example.simpleclickinteraction2;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.Region;
-import android.util.Log;
 import android.util.Pair;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
-public class CanvasController extends View {
+import java.util.ArrayList;
+
+public class CanvasController extends View{
+    private GameState originalGameState;
     private Table table;
+    private Block []blocks;
 
+    private CanvasClickChecker clickChecker;
     private HexDrawer hexDrawer;
-    private boolean isDragging = false;
+    public enum states{no_block_selected,block_selected,game_complete};
+    private states state;
+    private int SelectedBlockId;
+    private ArrayList<Pair<Integer,Integer>> moves;
 
     public CanvasController(Context context) {
         super(context);
-        ConfigFileReader reader = new ConfigFileReader(context);
-        Pair<Integer,Integer> dim = reader.readDimensions();
-        int[][] contents = reader.readTaleContents();
-        table = new Table(dim,contents);
-        hexDrawer = new HexDrawer(dim);
+        clickChecker = new CanvasClickChecker(9);
+        Level level = new Level(context);
+        level.generate(9,15);
+        this.blocks = level.getBlocks();
+        this.table = level.getTable();
+        this.originalGameState = new GameState(table,blocks);
+        this.moves = new ArrayList<Pair<Integer,Integer>>();
+        hexDrawer = new HexDrawer(9,context);
+        state = states.no_block_selected;
+    }
+    public void restart(){
+        GameState bufState = new GameState(originalGameState);
+        this.table = bufState.table;
+        this.blocks = bufState.blocks;
+        this.state = states.no_block_selected;
+        invalidate();
     }
 
+    public void undo(){
+        if(!moves.isEmpty()) {
+            Pair<Integer, Integer> lastMove = moves.get(moves.size() - 1);
+            blocks[lastMove.first].move(-lastMove.second);
+            moves.remove(moves.size() - 1);
+            invalidate();
+        }
+    }
+
+    public void hint(){
+        Solver solver = new Solver(table,blocks);
+        ArrayList<Pair<Integer,Integer>> solution = solver.solve(Solver.MAX_ITERATIONS_HINT);
+        if(solution == null) {
+            Toast.makeText(this.getContext(), "Cannot generate solution", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        int blockId = solution.get(0).first, direction = solution.get(0).second;
+        blocks[blockId].setHighlithedDirection(direction);
+        invalidate();
+    }
 
     @Override
     protected void onDraw(Canvas canvas) {
+        clickChecker.setViewPx(getHeight(),getWidth());
         hexDrawer.setViewPx(getHeight(),getWidth());
         super.onDraw(canvas);
         table.draw(canvas,hexDrawer);
+        for(int i=1;i<blocks.length;i++)
+            blocks[i].draw(canvas,hexDrawer);
     }
 
-/*
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        float touchX = event.getX();
-        float touchY = event.getY();
 
-        switch (event.getAction()) {
+        Vect2D clickedCell = clickedCell = clickChecker.clickedCell(event.getX(),event.getY());;
+
+        switch (event.getAction()){
             case MotionEvent.ACTION_DOWN:
-                // Check if touch is inside the hexagon
-                if (hexagonRegion.contains((int) touchX, (int) touchY)) {
-                    isDragging = true;
-                    lastTouchX = touchX;
-                    lastTouchY = touchY;
-                }
+                if(state == states.no_block_selected)
+                    if(table.getCellContent(clickedCell) > 0) {
+                        SelectedBlockId = table.getCellContent(clickedCell);
+                        blocks[SelectedBlockId].isSelected = true;
+                        state = states.block_selected;
+                    }
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (isDragging) {
-                    float dx = touchX - lastTouchX;
-                    float dy = touchY - lastTouchY;
-                    hexagonPath.offset(dx, dy);
-                    centerX += dx;
-                    centerY += dy;
-                    hexagonRegion = new Region();
-                    hexagonRegion.setPath(hexagonPath, new Region((int) (centerX - hexagonSize), (int) (centerY - hexagonSize), (int) (centerX + hexagonSize), (int) (centerY + hexagonSize)));
-                    lastTouchX = touchX;
-                    lastTouchY = touchY;
-                    invalidate();
-                }
+                if(state == states.block_selected)
+                    blocks[SelectedBlockId].update(clickedCell,moves);
                 break;
             case MotionEvent.ACTION_UP:
-                isDragging = false;
+                if(state == states.block_selected) {
+                    blocks[SelectedBlockId].isSelected = false;
+                    state = states.no_block_selected;
+                    if (table.isComplete())
+                        state = states.game_complete;
+                }
                 break;
         }
+
+        invalidate();
         return true;
     }
-*/
+
+
+
 }

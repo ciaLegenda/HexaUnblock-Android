@@ -5,6 +5,19 @@
     <color name="purple_700">#FF3700B3</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
+
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="yellow">#FFFDE113</color>
+    <color name="dark_gray">#ff303231</color>
+    <color name="button_color">#FF82BAFA</color>
+    <color name="table_background">#E2E2E2</color>
+
+    <array name="block_colors">
+        <item>#B86FE8</item>
+        <item>#FF7F54</item>
+        <item>#90be6d</item>
+        <item>#43aa8b</item>
+        <item>#577590</item>x
+    </array>
 </resources>
