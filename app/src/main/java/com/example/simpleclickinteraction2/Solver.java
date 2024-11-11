@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.TreeSet;
 
 public class Solver {
-    public static final int MAX_ITERATIONS_HINT = 500;
-    public static final int MAX_ITERATIONS_GENERATE = 300;
+    public static final int MAX_ITERATIONS_HINT = 10000;
+    public static final int MAX_ITERATIONS_GENERATE = 700;
     private TreeSet<GameState> gameStates;
     Solver(Table table,Block[] blocks){
         gameStates = new TreeSet<GameState>();

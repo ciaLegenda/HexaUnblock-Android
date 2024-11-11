@@ -11,7 +11,7 @@ import java.util.TreeSet;
 
 public class Level {
     private int []colors;
-    private final int maxIterations=5;
+    private final int maxIterations=15;
     private Block[] blocks;
     private Table table;
 
